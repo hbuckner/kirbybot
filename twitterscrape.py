@@ -3,6 +3,9 @@ from tweepy import OAuthHandler
 import json
 import wget
 import time
+import sqlite3
+import database
+import os.path
 
 consumer_key = 'yevA9LdQA5XNL1VQ13rWgFZnz'
 consumer_secret = 'If9W4cO7dFI1NOwrVGogdFdok60SP2edVY14aH7YCWK9VYhRtL'
@@ -28,31 +31,40 @@ auth.set_access_token(access_token, access_secret)
 
 api = tweepy.API(auth)
 
+#Setup Database Connections
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, "testDatabase.db")
+print(db_path)
+conn = database.create_connection(db_path)
 
-tweets = api.user_timeline(screen_name='SakataniYen',
+displayName = 'SakataniYen'
+
+tweets = api.user_timeline(screen_name= displayName,
                            count=200, include_rts=False,
                            exclude_replies=True)
 last_id = tweets[-1].id
 
 x=0
-while (x<16):
-     more_tweets = api.user_timeline(screen_name='SakataniYen',count=200,include_rts=False,exclude_replies=True,max_id=last_id-1)
+while (x<5):
+     more_tweets = api.user_timeline(screen_name= displayName,count=200,include_rts=False,exclude_replies=True,max_id=last_id-1)
      time.sleep(1)
      x=x+1
-     print(x)
      if (len(more_tweets) == 0):
          print ("nothing")
      else:
       last_id = more_tweets[-1].id-1
       tweets = tweets + more_tweets
-      print("still looking")
-      print(more_tweets)
+     ## print(more_tweets)
 
 media_files = set()
 print("the number of tweets went through was ", len(tweets))
 for status in tweets:
     media = status.entities.get('media', [])
     if(len(media) > 0):
+      #  print(media[0]['media_url'])
+        picture = (media[0]['media_url'],displayName)
+        image_id = database.create_image(conn,picture)
+        print(image_id)
         media_files.add(media[0]['media_url'])
 
 for media_file in media_files:
